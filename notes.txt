@@ -1,3 +1,147 @@
-245
+// 060223 ///
+// Salesforce order of execution
 
-push
+https://architect.salesforce.com/1/asset/immutable/s/e6cf2ac/assets/images/Salesforce-Order-Of-Execution-Diagram.png
+
+
+// AccountHandler
+public with sharing class AccountHandler {
+    
+    // create a method that creates a new opportunity record for a new account record
+    public static void createOppForNewAccounts(List<Account> acctList) {
+        // create a list to hold the new opp records to insert
+        List<Opportunity> newOppList = new List<Opportunity>();
+
+        // iterate over acctList (trigger.new) and create a new opp for each new account
+        for (Account a : acctList) {
+            // create an object to hold the new Opportunity record
+            Opportunity opp = new Opportunity();
+
+            // populate the fields on the new opportunity
+            opp.Name        = 'New Account Opportunity';
+            opp.Type        = 'New Customer';
+            opp.CloseDate   = Date.today().addMonths(3);
+            opp.StageName   = 'Prospecting';
+            opp.AccountId   = a.Id;
+
+            // add the new opportunity to my list of new opps
+            newOppList.add(opp);
+        }
+
+        // insert the opps into the database
+        if (!newOppList.isEmpty()) {
+            insert newOppList;
+        }
+    }
+
+    // create a method to update the related opp names from an updated account
+    public static void updateOppNames(List<Account> acctList, Map<Id, Account> oldAcctMap) {
+        // create a set to hold Account IDs where the Name field has changed
+        Set<Id> acctIds = new Set<Id>();
+
+        // iterate over the updated account records (trigger.new) and check to see if the Name has changed
+        for (Account acct : acctList) {
+
+            // compare the new Name value against the old Name value (trigger.oldMap) to see if it changed
+            if (acct.Name != oldAcctMap.get(acct.Id).Name) {
+                acctIds.add(acct.Id);
+            }
+        }
+
+        // if my set of IDs has any values, retrieve the related Opportunity records for those accounts and update them
+        if (!acctIds.isEmpty()) {
+            List<Opportunity> oppsToUpdate = new List<Opportunity>();
+
+            for (Opportunity opp : [SELECT Id FROM Opportunity WHERE AccountId IN :acctIds]){
+                oppsToUpdate.add(opp);
+            }
+
+            update oppsToUpdate;
+        }
+    }
+}
+
+
+trigger AccountMasterTrigger on Account (
+    before insert, after insert,
+    before update, after update,
+    before delete, after delete, after undelete) {
+
+    // logic to perform on before triggers
+    if (trigger.isBefore) {
+        if (trigger.isInsert) {
+            // logic
+        }
+
+        if (trigger.isUpdate) {
+            // logic
+        }
+
+        if (trigger.isDelete) {
+            // logic
+        }
+    }
+
+
+    // logic to perform for after triggers
+    if (trigger.isAfter) {
+        if (trigger.isInsert) {
+            AccountHandler.createOppForNewAccounts(trigger.new);
+        }
+
+        if (trigger.isUpdate) {
+            AccountHandler.updateOppNames(trigger.new, trigger.oldMap);
+        }
+
+        if (trigger.isDelete) {
+            // logic
+        }
+
+        if (trigger.isUndelete) {
+            // logic
+        }
+    }
+}
+
+
+trigger AccountMasterTrigger on Account (
+    before insert, after insert,
+    before update, after update,
+    before delete, after delete, after undelete) {
+
+    // logic to perform on before triggers
+    if (trigger.isBefore) {
+        if (trigger.isInsert) {
+            // logic
+        }
+
+        if (trigger.isUpdate) {
+            // logic
+        }
+
+        if (trigger.isDelete) {
+            // logic
+        }
+    }
+
+
+
+    // logic to perform for after triggers
+    if (trigger.isAfter) {
+        if (trigger.isInsert) {
+            // logic
+        }
+
+        if (trigger.isUpdate) {
+            // logic
+        }
+
+        if (trigger.isDelete) {
+            // logic
+        }
+
+        if (trigger.isUndelete) {
+            // logic
+        }
+    }
+}
